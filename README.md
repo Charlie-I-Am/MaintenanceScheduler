@@ -144,12 +144,6 @@ ungrouped until you choose to organize them into groups.
   "+ Add Group" buttons.
 - Task history now logs a "Created" event when a task is first added, with
   what it was created for, alongside reminders sent/failed and completions.
-
-### 0.2.0
-- Added **equipment groups**: organize equipment into groups and assign one
-  task to an entire group instead of duplicating it per item.
-- Automatic singular/plural wording throughout the UI and emails (e.g.
-  "1 day" vs "3 days") instead of "day(s)".
 - Dashboard: added a status filter next to the category filter; completed
   tasks are now hidden by default.
 - Dashboard: added a working Delete button on each task row.
@@ -160,6 +154,12 @@ ungrouped until you choose to organize them into groups.
   action row.
 - Fixed empty optional fields (email, description, notes, location)
   rendering the literal text "None" in edit forms.
+
+### 0.2.0
+- Added **equipment groups**: organize equipment into groups and assign one
+  task to an entire group instead of duplicating it per item.
+- Automatic singular/plural wording throughout the UI and emails (e.g.
+  "1 day" vs "3 days") instead of "day(s)".
 - Added an automatic, idempotent database migration so upgrading from a
   pre-groups install doesn't require manual steps.
 
