@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Email Settings{% endblock %}
+{% block content %}
+
+<h1 class="h3 mb-3">Email Settings</h1>
+
+<form method="post" class="card p-4 mb-4" style="max-width: 640px;">
+  <h5 class="mb-3">SMTP Server</h5>
+  <div class="row g-3">
+    <div class="col-md-8">
+      <label class="form-label">SMTP Host</label>
+      <input type="text" name="smtp_host" class="form-control" placeholder="smtp.gmail.com"
+             value="{{ settings.smtp_host or '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Port</label>
+      <input type="number" name="smtp_port" class="form-control" value="{{ settings.smtp_port or 587 }}">
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">SMTP Username</label>
+      <input type="text" name="smtp_username" class="form-control" value="{{ settings.smtp_username or '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">SMTP Password</label>
+      <input type="password" name="smtp_password" class="form-control" placeholder="{{ '(unchanged)' if settings.smtp_password else '' }}">
+      <div class="form-text">Leave blank to keep the current password.</div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-4 mt-2">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="use_tls" id="use_tls" {{ 'checked' if settings.use_tls else '' }}>
+      <label class="form-check-label" for="use_tls">Use STARTTLS</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="use_ssl" id="use_ssl" {{ 'checked' if settings.use_ssl else '' }}>
+      <label class="form-check-label" for="use_ssl">Use SSL (implicit TLS, usually port 465)</label>
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <h5 class="mb-3">Sending &amp; Recipients</h5>
+  <div class="mb-3">
+    <label class="form-label">From address</label>
+    <input type="email" name="from_email" class="form-control" value="{{ settings.from_email or '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Default recipient</label>
+    <input type="email" name="default_to_email" class="form-control" value="{{ settings.default_to_email or '' }}">
+    <div class="form-text">Used for any task that doesn't have its own override email.</div>
+  </div>
+
+  <hr class="my-4">
+  <h5 class="mb-3">Checking Schedule</h5>
+  <div class="mb-3">
+    <label class="form-label">Check for due reminders every (minutes)</label>
+    <input type="number" min="5" name="check_interval_minutes" class="form-control"
+           value="{{ settings.check_interval_minutes or 60 }}">
+    <div class="form-text">How often the app checks whether any task has entered its reminder window.</div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save Settings</button>
+</form>
+
+<div class="card p-4" style="max-width: 640px;">
+  <h5 class="mb-3">Send a Test Email</h5>
+  <form method="post" action="{{ url_for('settings_test') }}" class="d-flex gap-2">
+    <input type="email" name="test_to" class="form-control" placeholder="{{ settings.default_to_email or 'recipient@example.com' }}">
+    <button class="btn btn-outline-primary text-nowrap">Send Test</button>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if group else 'Add' }} Group{% endblock %}
+{% block content %}
+
+<h1 class="h3 mb-3">{{ 'Edit' if group else 'Add' }} Equipment Group</h1>
+
+<form method="post" class="card p-4" style="max-width: 560px;">
+  <div class="mb-3">
+    <label class="form-label">Group name</label>
+    <input type="text" name="name" class="form-control" required
+           placeholder="e.g. Rack 1 Servers, Shop Power Tools"
+           value="{{ group.name if group else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Category <span class="text-muted">(optional, used for dashboard filtering)</span></label>
+    <select name="category" class="form-select">
+      <option value="">Mixed / not specified</option>
+      {% for c in CATEGORIES %}
+        <option value="{{ c }}" {{ 'selected' if group and group.category==c else '' }}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+    <textarea name="description" class="form-control" rows="3">{{ (group.description or '') if group else '' }}</textarea>
+  </div>
+
+  {% if group %}
+  <div class="mb-3">
+    <label class="form-label">Equipment in this group</label>
+    {% if group.equipment %}
+      <ul class="list-group">
+        {% for item in group.equipment %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ item.name }}
+            <a href="{{ url_for('equipment_edit', eq_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-muted small">No equipment assigned yet. Add or edit equipment and pick this group.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{{ url_for('group_list') }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+
+{% endblock %}

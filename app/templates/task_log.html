@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Log - {{ task.title }}{% endblock %}
+{% block content %}
+
+<h1 class="h3 mb-1">{{ task.title }}</h1>
+<div class="text-muted mb-3">{{ task.equipment.name }} &middot; History</div>
+
+{% if not task.logs %}
+  <div class="alert alert-light border">No history yet for this task.</div>
+{% else %}
+<div class="table-responsive">
+<table class="table bg-white">
+  <thead><tr><th>When</th><th>Event</th><th>Due date</th><th>Note</th></tr></thead>
+  <tbody>
+    {% for log in task.logs %}
+    <tr>
+      <td>{{ log.timestamp.strftime('%b %d, %Y %H:%M') }}</td>
+      <td>
+        {% if log.event == 'created' %}<span class="badge bg-primary">Created</span>
+        {% elif log.event == 'reminder_sent' %}<span class="badge bg-info text-dark">Reminder sent</span>
+        {% elif log.event == 'reminder_failed' %}<span class="badge bg-danger">Send failed</span>
+        {% elif log.event == 'completed' %}<span class="badge bg-success">Completed</span>
+        {% else %}<span class="badge bg-secondary">{{ log.event }}</span>
+        {% endif %}
+      </td>
+      <td>{{ log.due_date.strftime('%b %d, %Y') }}</td>
+      <td class="text-muted small">{{ log.note or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Back to dashboard</a>
+
+{% endblock %}

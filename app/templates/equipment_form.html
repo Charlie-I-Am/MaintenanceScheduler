@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if item else 'Add' }} Equipment{% endblock %}
+{% block content %}
+
+<h1 class="h3 mb-3">{{ 'Edit' if item else 'Add' }} Equipment</h1>
+
+<form method="post" class="card p-4" style="max-width: 560px;">
+  <div class="mb-3">
+    <label class="form-label">Name</label>
+    <input type="text" name="name" class="form-control" required value="{{ item.name if item else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Category</label>
+    <select name="category" class="form-select">
+      {% for c in CATEGORIES %}
+        <option value="{{ c }}" {{ 'selected' if item and item.category==c else '' }}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Group <span class="text-muted">(optional)</span></label>
+    <select name="group_id" class="form-select">
+      <option value="">No group</option>
+      {% for g in groups %}
+        <option value="{{ g.id }}" {{ 'selected' if item and item.group_id==g.id else '' }}>{{ g.name }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-text">Grouping equipment lets you assign one maintenance task to all of them at once.</div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Location <span class="text-muted">(optional)</span></label>
+    <input type="text" name="location" class="form-control" value="{{ (item.location or '') if item else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Notes <span class="text-muted">(optional)</span></label>
+    <textarea name="notes" class="form-control" rows="3">{{ (item.notes or '') if item else '' }}</textarea>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{{ url_for('equipment_list') }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+
+{% endblock %}

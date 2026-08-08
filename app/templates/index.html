@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Maintenance Scheduler{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Maintenance Tasks</h1>
+  <a href="{{ url_for('task_new') }}" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-1">
+  <span aria-hidden="true">+</span> New Task
+</a>
+</div>
+
+<div class="row g-2 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('dashboard', status='overdue', category=category_filter or None) }}" class="text-decoration-none">
+      <div class="card stat-card border-danger">
+        <div class="card-body">
+          <div class="text-danger fw-bold fs-4">{{ counts.overdue }}</div>
+          <div class="text-muted small">Overdue</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('dashboard', status='due_soon', category=category_filter or None) }}" class="text-decoration-none">
+      <div class="card stat-card border-warning">
+        <div class="card-body">
+          <div class="text-warning fw-bold fs-4">{{ counts.due_soon }}</div>
+          <div class="text-muted small">Due Soon</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('dashboard', status='scheduled', category=category_filter or None) }}" class="text-decoration-none">
+      <div class="card stat-card border-success">
+        <div class="card-body">
+          <div class="text-success fw-bold fs-4">{{ counts.scheduled }}</div>
+          <div class="text-muted small">Scheduled</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('dashboard', status='completed', category=category_filter or None) }}" class="text-decoration-none">
+      <div class="card stat-card border-secondary">
+        <div class="card-body">
+          <div class="text-secondary fw-bold fs-4">{{ counts.completed }}</div>
+          <div class="text-muted small">Completed</div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+  <select class="form-select form-select-sm w-auto" id="categoryFilter">
+    <option value="">All categories</option>
+    {% for c in CATEGORIES %}
+      <option value="{{ c }}" {{ 'selected' if category_filter==c else '' }}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select class="form-select form-select-sm w-auto" id="statusFilter">
+    <option value="" {{ 'selected' if not status_filter else '' }}>All (except completed)</option>
+    <option value="overdue" {{ 'selected' if status_filter=='overdue' else '' }}>Overdue</option>
+    <option value="due_soon" {{ 'selected' if status_filter=='due_soon' else '' }}>Due Soon</option>
+    <option value="scheduled" {{ 'selected' if status_filter=='scheduled' else '' }}>Scheduled</option>
+    <option value="completed" {{ 'selected' if status_filter=='completed' else '' }}>Completed</option>
+  </select>
+  {% if status_filter or category_filter %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary">Clear filters</a>
+  {% endif %}
+</div>
+
+<script>
+function applyDashboardFilters() {
+  const category = document.getElementById('categoryFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (status) params.set('status', status);
+  window.location = "{{ url_for('dashboard') }}" + (params.toString() ? "?" + params.toString() : "");
+}
+document.getElementById('categoryFilter').addEventListener('change', applyDashboardFilters);
+document.getElementById('statusFilter').addEventListener('change', applyDashboardFilters);
+</script>
+
+{% if not tasks %}
+  <div class="alert alert-light border">No tasks match this view yet. <a href="{{ url_for('task_new') }}">Create one</a>.</div>
+{% else %}
+<div class="table-responsive">
+<table class="table table-hover align-middle bg-white">
+  <thead>
+    <tr>
+      <th>Status</th>
+      <th>Applies To</th>
+      <th>Task</th>
+      <th>Due Date</th>
+      <th>Repeats</th>
+      <th>Reminder</th>
+      <th>Email Sent?</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td>
+        {% if task.status == 'overdue' %}<span class="badge bg-danger">Overdue</span>
+        {% elif task.status == 'due_soon' %}<span class="badge bg-warning text-dark">Due Soon</span>
+        {% elif task.status == 'completed' %}<span class="badge bg-secondary">Completed</span>
+        {% else %}<span class="badge bg-success">Scheduled</span>
+        {% endif %}
+      </td>
+      <td>
+        <div class="fw-semibold">{{ '📁 ' if task.is_group_task else '' }}{{ task.target_name }}</div>
+        <div class="text-muted small">{{ task.target_subtitle }}</div>
+      </td>
+      <td>
+        <a href="{{ url_for('task_edit', task_id=task.id) }}" class="text-decoration-none">{{ task.title }}</a>
+      </td>
+      <td>
+        {{ task.next_due_date.strftime('%b %d, %Y') }}
+        <div class="text-muted small">
+          {% if task.days_until_due < 0 %}{{ (-task.days_until_due) | fmt_count('day') }} overdue
+          {% elif task.days_until_due == 0 %}due today
+          {% else %}in {{ task.days_until_due | fmt_count('day') }}
+          {% endif %}
+        </div>
+      </td>
+      <td>{{ task.frequency_label }}</td>
+      <td>{{ task.reminder_days_before | fmt_count('day') }} before</td>
+      <td>
+        {% if task.email_sent_for_current_due %}
+          <span class="badge bg-info text-dark">Sent</span>
+          <div class="text-muted small">{{ task.last_sent_at.strftime('%b %d, %Y') if task.last_sent_at else '' }}</div>
+        {% else %}
+          <span class="badge bg-light text-dark border">Not sent</span>
+        {% endif %}
+      </td>
+      <td class="text-end">
+        <div class="d-flex flex-wrap gap-1 justify-content-end">
+          {% if task.active %}
+          <form method="post" action="{{ url_for('task_complete', task_id=task.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-success" title="Mark complete">✓ Done</button>
+          </form>
+          <form method="post" action="{{ url_for('task_send_now', task_id=task.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-primary" title="Send reminder email now">✉ Send</button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('task_edit', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+          <a href="{{ url_for('task_log', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">Log</a>
+          <form method="post" action="{{ url_for('task_delete', task_id=task.id) }}" class="d-inline"
+                onsubmit="return confirm('Permanently delete &quot;{{ task.title }}&quot;? This cannot be undone.');">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete task permanently">Delete</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% endblock %}

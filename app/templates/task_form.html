@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if task else 'New' }} Task{% endblock %}
+{% block content %}
+
+<h1 class="h3 mb-3">{{ 'Edit' if task else 'New' }} Maintenance Task</h1>
+
+<form method="post" class="card p-4" style="max-width: 640px;">
+  <div class="mb-3">
+    <label class="form-label">Applies to</label>
+    <select name="target" class="form-select" required>
+      <option value="" disabled {{ 'selected' if not task else '' }}>Choose equipment or a group&hellip;</option>
+      {% if groups %}
+      <optgroup label="Equipment Groups (one task covers every item)">
+        {% for g in groups %}
+          <option value="group:{{ g.id }}" {{ 'selected' if task and task.group_id==g.id else '' }}>
+            📁 {{ g.name }} ({{ g.item_count }} {{ 'item' if g.item_count == 1 else 'items' }})
+          </option>
+        {% endfor %}
+      </optgroup>
+      {% endif %}
+      {% if equipment_items %}
+      <optgroup label="Individual Equipment">
+        {% for eq in equipment_items %}
+          <option value="equipment:{{ eq.id }}" {{ 'selected' if task and task.equipment_id==eq.id else '' }}>
+            {{ eq.name }} ({{ eq.category }})
+          </option>
+        {% endfor %}
+      </optgroup>
+      {% endif %}
+    </select>
+    <div class="form-text">Pick a group to apply this one task to everything in it, instead of creating a separate task per item.</div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Task title</label>
+    <input type="text" name="title" class="form-control" required
+           placeholder="e.g. Replace air filter"
+           value="{{ task.title if task else '' }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+    <textarea name="description" class="form-control" rows="3">{{ (task.description or '') if task else '' }}</textarea>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Next due date</label>
+      <input type="date" name="next_due_date" class="form-control" required
+             value="{{ task.next_due_date.isoformat() if task else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Remind me this many days before</label>
+      <input type="number" min="0" name="reminder_days_before" class="form-control"
+             value="{{ task.reminder_days_before if task else 3 }}">
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">Repeats</label>
+      <select name="frequency_type" class="form-select">
+        {% for f in FREQUENCY_TYPES %}
+          <option value="{{ f }}" {{ 'selected' if task and task.frequency_type==f else ('selected' if not task and f=='once' else '') }}>
+            {{ 'One-time (no repeat)' if f == 'once' else f|capitalize }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Every N (for repeating tasks)</label>
+      <input type="number" min="1" name="frequency_interval" class="form-control"
+             value="{{ task.frequency_interval if task else 1 }}">
+    </div>
+  </div>
+
+  <div class="mb-3 mt-3">
+    <label class="form-label">Notify email <span class="text-muted">(optional - overrides the default recipient in Settings)</span></label>
+    <input type="email" name="notify_email" class="form-control"
+           placeholder="leave blank to use default recipient"
+           value="{{ (task.notify_email or '') if task else '' }}">
+  </div>
+
+  {% if task %}
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" name="active" id="active" {{ 'checked' if task.active else '' }}>
+    <label class="form-check-label" for="active">Active (uncheck to pause reminders without deleting)</label>
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Save Task</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+
+{% if task %}
+<form method="post" action="{{ url_for('task_delete', task_id=task.id) }}"
+      class="mt-3" style="max-width: 640px;"
+      onsubmit="return confirm('Permanently delete this task? This cannot be undone.');">
+  <button type="submit" class="btn btn-outline-danger">Delete Task</button>
+</form>
+{% endif %}
+
+{% endblock %}

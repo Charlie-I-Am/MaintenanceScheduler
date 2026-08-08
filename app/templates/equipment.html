@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Equipment - Maintenance Scheduler{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Equipment</h1>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('group_new') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center gap-1">
+      <span aria-hidden="true">+</span> Add Group
+    </a>
+    <a href="{{ url_for('equipment_new') }}" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-1">
+      <span aria-hidden="true">+</span> Add Equipment
+    </a>
+  </div>
+</div>
+
+{% macro equipment_card(item) %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">{{ item.name }}</h5>
+          <span class="badge bg-secondary">{{ item.category }}</span>
+        </div>
+        {% if item.location %}<div class="text-muted small mb-2 mt-2">📍 {{ item.location }}</div>{% endif %}
+        {% if item.notes %}<p class="card-text small">{{ item.notes }}</p>{% endif %}
+        <div class="text-muted small">{{ item.tasks|length }} {{ 'task' if item.tasks|length == 1 else 'tasks' }}</div>
+      </div>
+      <div class="card-footer bg-white d-flex justify-content-between">
+        <a href="{{ url_for('equipment_edit', eq_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <form method="post" action="{{ url_for('equipment_delete', eq_id=item.id) }}"
+              onsubmit="return confirm('Delete {{ item.name }} and all its tasks?');">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{% if not groups and not ungrouped %}
+  <div class="alert alert-light border">No equipment yet. <a href="{{ url_for('equipment_new') }}">Add your first item</a>.</div>
+{% endif %}
+
+{% for group in groups %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <h5 class="mb-0">📁 {{ group.name }}
+        <span class="badge bg-info text-dark">{{ group.item_count }} {{ 'item' if group.item_count == 1 else 'items' }}</span>
+      </h5>
+      {% if group.description %}<div class="text-muted small">{{ group.description }}</div>{% endif %}
+    </div>
+    <a href="{{ url_for('group_edit', group_id=group.id) }}" class="btn btn-sm btn-outline-secondary">Edit Group</a>
+  </div>
+  {% if group.equipment %}
+  <div class="row g-3">
+    {% for item in group.equipment %}
+      {{ equipment_card(item) }}
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="alert alert-light border small mb-0">No equipment assigned to this group yet. <a href="{{ url_for('equipment_new') }}">Add one</a> and assign it here.</div>
+  {% endif %}
+</div>
+{% endfor %}
+
+{% if ungrouped %}
+<div class="mb-4">
+  <h5 class="mb-2 text-muted">Ungrouped</h5>
+  <div class="row g-3">
+    {% for item in ungrouped %}
+      {{ equipment_card(item) }}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
