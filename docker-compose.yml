@@ -1,0 +1,20 @@
+services:
+  maintenance-scheduler:
+    build: .
+    container_name: maintenance-scheduler
+    ports:
+      - "5000:5000"
+    volumes:
+      # All persistent data (SQLite DB) lives here on the host.
+      # Rebuilding/upgrading the container image never touches this folder.
+      - ./data:/data
+    environment:
+      - TZ=America/Chicago
+      # Change this to a random string in production
+      - SECRET_KEY=please-change-this-secret-key
+      - DATABASE_PATH=/data/maintenance.db
+      # Optional: set both to enable simple HTTP basic auth on the whole app.
+      # Leave blank to disable auth (fine on a trusted home LAN).
+      - BASIC_AUTH_USER=
+      - BASIC_AUTH_PASS=
+    restart: unless-stopped
