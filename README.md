@@ -3,6 +3,8 @@
 A self-hosted web app for tracking maintenance schedules on servers, appliances,
 tools, and other equipment — with automatic email reminders.
 
+**AI Disclosure:** Artificial Intelligence was used during initial prototyping and development.
+
 ## Features
 
 - Add **equipment** (servers, appliances, tools, vehicles, HVAC, etc.)
