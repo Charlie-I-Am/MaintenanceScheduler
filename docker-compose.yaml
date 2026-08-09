@@ -1,7 +1,8 @@
 services:
   maintenance-scheduler:
-    build: .
+    image: ghcr.io/Charlie-I-Am/MaintenanceScheduler:latest
     container_name: maintenance-scheduler
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
@@ -17,4 +18,3 @@ services:
       # Leave blank to disable auth (fine on a trusted home LAN).
       - BASIC_AUTH_USER=
       - BASIC_AUTH_PASS=
-    restart: unless-stopped
