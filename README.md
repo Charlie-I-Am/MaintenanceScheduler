@@ -138,6 +138,10 @@ ungrouped until you choose to organize them into groups.
 
 ## Changelog
 
+### 0.3.3
+ - Fixed lint fixes for first publish, import organization and datetime with 
+   timezone from docker compose support.
+
 ### 0.3.1
  - Added in docker-publish, and ci files for github automation.
 

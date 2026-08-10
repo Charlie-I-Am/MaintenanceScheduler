@@ -7,7 +7,6 @@ from sqlalchemy import inspect, text
 
 from ._version import __version__
 from .email_utils import EmailError, build_reminder_email, send_email
-
 from .models import (
     CATEGORIES,
     FREQUENCY_TYPES,
@@ -19,7 +18,6 @@ from .models import (
     db,
     fmt_count,
 )
-
 from .scheduler import compute_next_due, init_scheduler, reschedule
 
 log = logging.getLogger("maintenance_scheduler")

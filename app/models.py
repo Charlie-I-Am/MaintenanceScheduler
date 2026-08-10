@@ -1,6 +1,8 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from flask_sqlalchemy import SQLAlchemy
+
+from .tz import local_today
 
 db = SQLAlchemy()
 
@@ -147,7 +149,7 @@ class MaintenanceTask(db.Model):
 
     @property
     def days_until_due(self):
-        return (self.next_due_date - date.today()).days
+        return (self.next_due_date - local_today()).days
 
     @property
     def status(self):
