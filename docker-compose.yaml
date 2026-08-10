@@ -1,6 +1,6 @@
 services:
   maintenance-scheduler:
-    image: ghcr.io/Charlie-I-Am/MaintenanceScheduler:latest
+    image: ghcr.io/charlie-i-am/maintenancescheduler:latest
     container_name: maintenance-scheduler
     restart: unless-stopped
     ports:

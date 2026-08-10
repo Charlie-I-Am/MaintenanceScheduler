@@ -103,6 +103,8 @@ def create_app():
 
     init_scheduler(app)
 
+    log.info(f"Starting maintenance-scheduler v{__version__}")
+
     return app
 
 
@@ -431,4 +433,3 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-    log.info(f"Starting maintenance-scheduler v{__version__}")

@@ -28,13 +28,15 @@ tools, and other equipment — with automatic email reminders.
 
 ## Quick start
 
+Download the example `docker-compose.yaml` file above into its own directory.
+
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Then open **http://localhost:5000**.
 
-That's it — the SQLite database is created automatically inside `./data/maintenance.db`
+The SQLite database is created automatically inside `./data/maintenance.db`
 on first run.
 
 ## Equipment groups
@@ -57,19 +59,6 @@ covers the whole rack.
 - The reminder email for a group task lists every piece of equipment
   currently in the group, so you know exactly what to check.
 
-## Persisting data across upgrades
-
-The `docker-compose.yml` bind-mounts `./data` (on your host) to `/data` (inside
-the container), and the app stores its entire database there. To upgrade:
-
-```bash
-git pull                     # or however you get the new app code
-docker compose up -d --build # rebuilds the image, but ./data is untouched
-```
-
-Your equipment, tasks, history, and email settings will all still be there
-after the rebuild.
-
 ## Configuring email
 
 Go to **Email Settings** in the app. You'll need:
@@ -77,7 +66,7 @@ Go to **Email Settings** in the app. You'll need:
 - **SMTP host/port** — e.g. `smtp.gmail.com` port `587` with STARTTLS, or your
   provider's equivalent (Office 365, a self-hosted mail server, SendGrid SMTP
   relay, etc.)
-- **Username/password** — for Gmail, use an
+- **Username/password** — for Gmail, use your email and an
   [App Password](https://myaccount.google.com/apppasswords) rather than your
   normal password if 2FA is enabled
 - **From address** and a **default recipient** (individual tasks can override
@@ -109,17 +98,10 @@ button on the dashboard permanently removes the task (and its history log)
 from the database — there's no undo. Use "Mark complete" for tasks you want
 to keep a record of; use "Delete" for tasks you want gone entirely.
 
-## Filtering the dashboard
-
-The dashboard has two filters side by side: **category** and **status**
-(Overdue / Due Soon / Scheduled / Completed). By default, completed tasks are
-hidden so they don't clutter the view — select "Completed" in the status
-filter (or click the Completed count card) to see them. The two filters can
-be combined, e.g. category = Server + status = Overdue.
 
 ## Updating the app
 
-Replace the app files with the new version, then rebuild:
+Pull the new image with `docker compose pull` and then `docker compose up -d`, or just rebuild the container with:
 
 ```bash
 docker compose up -d --build
@@ -128,15 +110,10 @@ docker compose up -d --build
 `./data` is a bind mount to your host, so it's never touched by a rebuild —
 your equipment, groups, tasks, and email settings all carry over.
 
-**About this update specifically:** it adds equipment groups, which means a
-new database table and a couple of new columns on existing tables. The app
-creates any new tables automatically on startup, and new columns default to
-empty/ungrouped for all your existing equipment and tasks — nothing you
-already had gets reassigned or lost. You won't need to do anything manually;
-just rebuild as usual and your existing equipment/tasks will simply show up
-ungrouped until you choose to organize them into groups.
-
 ## Changelog
+
+### 0.3.7
+ - Bug fixes to release a stable version
 
 ### 0.3.3
  - Fixed lint fixes for first publish, import organization and datetime with 
@@ -181,17 +158,14 @@ ungrouped until you choose to organize them into groups.
 
 ## Optional: basic auth
 
-If you expose this app beyond your local network, set `BASIC_AUTH_USER` and
-`BASIC_AUTH_PASS` in `docker-compose.yml` to put the whole app behind a simple
-HTTP login prompt. Leave both blank to disable (fine for a trusted home LAN).
-For anything internet-facing, put it behind a reverse proxy with HTTPS
-(Caddy, Traefik, nginx, etc.) rather than relying on basic auth alone.
+Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` in the `docker-compose.yaml` to 
+put the whole app behind a simple HTTP login prompt. Leave both blank to disable. 
 
 ## Project structure
 
 ```
 maintenance-scheduler/
-├── docker-compose.yml     # defines the service + the persistent ./data volume
+├── docker-compose.yaml     # defines the service + the persistent ./data volume
 ├── Dockerfile
 ├── requirements.txt
 ├── data/                  # <- persists across rebuilds (SQLite DB lives here)
@@ -200,15 +174,17 @@ maintenance-scheduler/
     ├── models.py           # Equipment, EquipmentGroup, MaintenanceTask, TaskLog, EmailSettings
     ├── scheduler.py        # background job that checks & sends reminders
     ├── email_utils.py      # SMTP sending
+    ├── _version.py         # to track what version of the app you are running
+    ├── tz.py               # manages timezone set in the compose for the rest of the app
     ├── templates/          # Jinja2 + Bootstrap 5 UI
     └── static/style.css
 ```
 
 ## Notes / things to customize
 
-- Set `TZ` in `docker-compose.yml` to your local timezone so "days until due"
+- Set `TZ` in `docker-compose.yaml` to your local timezone so "days until due"
   lines up with your calendar.
 - The scheduler runs inside the single web process (gunicorn with 1 worker).
   If you ever scale to multiple workers/replicas, move the reminder-check job
   to a separate process to avoid duplicate emails.
-- `SECRET_KEY` in `docker-compose.yml` should be changed to a random value.
+- `SECRET_KEY` in `docker-compose.yaml` should be changed to a random value.
