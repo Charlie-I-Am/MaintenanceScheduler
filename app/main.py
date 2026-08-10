@@ -12,7 +12,7 @@ from .models import (
 )
 from .email_utils import send_email, build_reminder_email, EmailError
 from .scheduler import init_scheduler, reschedule, compute_next_due
-from ._version.py import __version__
+from ._version import __version__
 
 log = logging.getLogger("maintenance_scheduler")
 
