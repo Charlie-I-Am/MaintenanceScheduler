@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      # If you don't have a ruff config yet, this will just check
+      # basic style/errors with sane defaults - safe to leave in.
+      - name: Lint
+        run: ruff check .
+
+      # Add a Test step back here once you have pytest tests to run:
+      #   - name: Test
+      #     run: pytest
