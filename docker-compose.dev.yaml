@@ -1,0 +1,10 @@
+# For local development / testing changes before you push a release.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# This overrides the published `image:` with a local build from the
+# Dockerfile in this repo, so you can test your own code changes.
+services:
+  maintenance-scheduler:
+    build: .
+    image: maintenance-scheduler:dev
