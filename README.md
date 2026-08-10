@@ -138,6 +138,9 @@ ungrouped until you choose to organize them into groups.
 
 ## Changelog
 
+### 0.3.1
+ - Added in docker-publish, and ci files for github automation.
+
 ### 0.3.0
 - Fixed the category badge on equipment/group cards rendering pinned to the
   top of the card instead of vertically centered next to the name (a flex

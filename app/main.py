@@ -12,6 +12,7 @@ from .models import (
 )
 from .email_utils import send_email, build_reminder_email, EmailError
 from .scheduler import init_scheduler, reschedule, compute_next_due
+from ._version.py import __version__
 
 log = logging.getLogger("maintenance_scheduler")
 
@@ -423,3 +424,4 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+    log.info(f"Starting maintenance-scheduler v{__version__}")
