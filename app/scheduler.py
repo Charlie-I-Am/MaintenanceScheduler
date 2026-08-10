@@ -18,7 +18,6 @@ from .models import (
     db,
     fmt_count,
 )
-from .scheduler import compute_next_due, init_scheduler, reschedule
 from .tz import local_today, utc_now
 
 log = logging.getLogger("maintenance_scheduler")
