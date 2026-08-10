@@ -5,6 +5,11 @@ tools, and other equipment — with automatic email reminders.
 
 **AI Disclosure:** Artificial Intelligence was used during initial prototyping and development.
 
+This project is community driven, and outside collaborators are welcome! You just have to agree to the contribution agreement. If there is a feature that you would like to see and it is not currently on the road map let us know! If you find bugs or issues with the program also let us know.
+
+### Contribution Agreement
+By creating a pull request and possibly contributing to this project you acknowledge and agree with this projects lisence, and its terms. You affirm that the code you submit is for building up the project, and is free from malicious code and to the best of your knowledge known vulnerbilites. The code you submit must be commented and readable, and if it is not you accept that the pull request may be denied and returned with comments, you may chose to change it and resubmit. Please do not continue to submit pull requests if you have not changed anything.
+
 ## Features
 
 - Add **equipment** (servers, appliances, tools, vehicles, HVAC, etc.)
