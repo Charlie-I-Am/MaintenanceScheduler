@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import date, datetime
+from datetime import date
 
 from flask import Flask, Response, flash, redirect, render_template, request, url_for
 from sqlalchemy import inspect, text
@@ -19,6 +19,7 @@ from .models import (
     fmt_count,
 )
 from .scheduler import compute_next_due, init_scheduler, reschedule
+from .tz import local_today, utc_now
 
 log = logging.getLogger("maintenance_scheduler")
 
@@ -125,7 +126,7 @@ def register_routes(app):
 
     @app.context_processor
     def inject_globals():
-        return {"CATEGORIES": CATEGORIES, "FREQUENCY_TYPES": FREQUENCY_TYPES, "today": date.today()}
+        return {"CATEGORIES": CATEGORIES, "FREQUENCY_TYPES": FREQUENCY_TYPES, "today": local_today()}
 
     @app.template_filter("fmt_count")
     def fmt_count_filter(n, singular):
@@ -286,7 +287,7 @@ def register_routes(app):
                 description=request.form.get("description", "").strip(),
                 frequency_type=request.form.get("frequency_type", "once"),
                 frequency_interval=int(request.form.get("frequency_interval") or 1),
-                next_due_date=datetime.strptime(request.form["next_due_date"], "%Y-%m-%d").date(),
+                next_due_date=date.fromisoformat(request.form["next_due_date"]),
                 reminder_days_before=int(request.form.get("reminder_days_before") or 3),
                 notify_email=request.form.get("notify_email", "").strip() or None,
             )
@@ -325,7 +326,7 @@ def register_routes(app):
             task.description = request.form.get("description", "").strip()
             task.frequency_type = request.form.get("frequency_type", "once")
             task.frequency_interval = int(request.form.get("frequency_interval") or 1)
-            task.next_due_date = datetime.strptime(request.form["next_due_date"], "%Y-%m-%d").date()
+            task.next_due_date = date.fromisoformat(request.form["next_due_date"])
             task.reminder_days_before = int(request.form.get("reminder_days_before") or 3)
             task.notify_email = request.form.get("notify_email", "").strip() or None
             task.active = "active" in request.form
@@ -369,7 +370,7 @@ def register_routes(app):
         subject, text, html = build_reminder_email(task)
         try:
             send_email(settings, to_addr, subject, text, html)
-            task.last_sent_at = datetime.utcnow()
+            task.last_sent_at = utc_now()
             task.last_sent_for_due_date = task.next_due_date
             db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date,
                                     event="reminder_sent", note=f"Manually sent to {to_addr}"))
