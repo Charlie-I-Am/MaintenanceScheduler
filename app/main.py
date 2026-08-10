@@ -1,18 +1,26 @@
-import os
 import logging
+import os
 from datetime import date, datetime
-from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, flash, Response
+from flask import Flask, Response, flash, redirect, render_template, request, url_for
 from sqlalchemy import inspect, text
 
-from .models import (
-    db, Equipment, EquipmentGroup, MaintenanceTask, EmailSettings, TaskLog,
-    CATEGORIES, FREQUENCY_TYPES, pluralize, fmt_count,
-)
-from .email_utils import send_email, build_reminder_email, EmailError
-from .scheduler import init_scheduler, reschedule, compute_next_due
 from ._version import __version__
+from .email_utils import EmailError, build_reminder_email, send_email
+
+from .models import (
+    CATEGORIES,
+    FREQUENCY_TYPES,
+    EmailSettings,
+    Equipment,
+    EquipmentGroup,
+    MaintenanceTask,
+    TaskLog,
+    db,
+    fmt_count,
+)
+
+from .scheduler import compute_next_due, init_scheduler, reschedule
 
 log = logging.getLogger("maintenance_scheduler")
 

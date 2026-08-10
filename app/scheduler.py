@@ -1,10 +1,11 @@
 import logging
 from datetime import date
-from dateutil.relativedelta import relativedelta
-from apscheduler.schedulers.background import BackgroundScheduler
 
-from .models import db, MaintenanceTask, EmailSettings, TaskLog
-from .email_utils import send_email, build_reminder_email, EmailError
+from apscheduler.schedulers.background import BackgroundScheduler
+from dateutil.relativedelta import relativedelta
+
+from .email_utils import EmailError, build_reminder_email, send_email
+from .models import EmailSettings, MaintenanceTask, TaskLog, db
 
 log = logging.getLogger("maintenance_scheduler")
 
@@ -105,7 +106,6 @@ def init_scheduler(app):
 
 def reschedule(app):
     """Call after the user changes the check interval in Settings."""
-    global _scheduler
     if _scheduler is None:
         return
     with app.app_context():

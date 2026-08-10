@@ -1,6 +1,6 @@
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 class EmailError(Exception):
@@ -46,12 +46,12 @@ def send_email(settings, to_addr, subject, body_text, body_html=None):
             server.sendmail(settings.from_email, [to_addr], msg.as_string())
         finally:
             server.quit()
-    except Exception as exc:  # noqa: BLE001 - surface any SMTP error to the user
+    except Exception as exc:
         raise EmailError(f"Failed to send email: {exc}") from exc
 
 
 def build_reminder_email(task):
-    from .models import pluralize, fmt_count  # local import to avoid circular import
+    from .models import fmt_count, pluralize  # local import to avoid circular import
 
     target_label = task.target_name
     subject = f"Maintenance reminder: {task.title} ({target_label})"
