@@ -202,3 +202,8 @@ maintenance-scheduler/
   If you ever scale to multiple workers/replicas, move the reminder-check job
   to a separate process to avoid duplicate emails.
 - `SECRET_KEY` in `docker-compose.yaml` should be changed to a random value.
+
+# Screenshots
+![dashboard](image.png)
+
+![equipment](image-1.png)

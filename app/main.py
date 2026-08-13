@@ -2,7 +2,16 @@ import logging
 import os
 from datetime import date
 
-from flask import Flask, Response, flash, jsonify, redirect, render_template, request, url_for
+from flask import ( 
+    Flask, 
+    Response, 
+    flash, 
+    jsonify, 
+    redirect, 
+    render_template, 
+    request, 
+    url_for,
+)
 
 from ._version import __version__
 from .email_utils import EmailError, build_reminder_email, send_email
