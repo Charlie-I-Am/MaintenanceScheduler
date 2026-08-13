@@ -103,7 +103,7 @@ document.getElementById('statusFilter').addEventListener('change', applyDashboar
   </thead>
   <tbody>
     {% for task in tasks %}
-    <tr>
+    <tr class="task-row" data-task-id="{{ task.id }}" style="cursor:pointer">
       <td>
         {% if task.status == 'overdue' %}<span class="badge bg-danger">Overdue</span>
         {% elif task.status == 'due_soon' %}<span class="badge bg-warning text-dark">Due Soon</span>
@@ -137,7 +137,7 @@ document.getElementById('statusFilter').addEventListener('change', applyDashboar
           <span class="badge bg-light text-dark border">Not sent</span>
         {% endif %}
       </td>
-      <td class="text-end">
+      <td class="text-end actions-col">
         <div class="d-flex flex-wrap gap-1 justify-content-end">
           {% if task.active %}
           <form method="post" action="{{ url_for('task_complete', task_id=task.id) }}" class="d-inline">
@@ -161,5 +161,272 @@ document.getElementById('statusFilter').addEventListener('change', applyDashboar
 </table>
 </div>
 {% endif %}
+
+<!-- ---------------- Task detail / edit modal ---------------- -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true"
+    data-frequency-types='{{ FREQUENCY_TYPES | tojson }}'>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-0">Task Details</h5>
+          <div class="text-muted small" id="taskModalTarget">&nbsp;</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Double-click any value below to edit it. Press Enter or click away to save, Esc to cancel.</p>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="title">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Title</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="__applies_to" style="opacity:.85">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Applies To</div>
+          <div class="field-value flex-grow-1" id="taskModalAppliesTo">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="__status">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Status</div>
+          <div class="field-value flex-grow-1" id="taskModalStatus">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="next_due_date">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Due Date</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="frequency_type">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Repeats</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="frequency_interval">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Every N</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="reminder_days_before">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Remind Me</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="notify_email">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Notify Email</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start border-bottom py-2" data-field="description">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Description</div>
+          <div class="field-value flex-grow-1" ondblclick="editField(this)">&nbsp;</div>
+        </div>
+
+        <div class="field-row d-flex align-items-start py-2" data-field="__sent">
+          <div class="text-muted small" style="width:150px;flex-shrink:0;">Email Sent</div>
+          <div class="field-value flex-grow-1" id="taskModalSent">&nbsp;</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="small me-auto" id="taskModalSaveStatus"></span>
+        <a href="#" id="taskModalLogLink" class="btn btn-outline-secondary btn-sm">Full log</a>
+        <a href="#" id="taskModalEditLink" class="btn btn-outline-secondary btn-sm">Full edit page</a>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('load', function () {
+  const modalEl = document.getElementById('taskModal');
+  const FREQUENCY_TYPES = JSON.parse(modalEl.dataset.frequencyTypes);
+  const STATUS_BADGES = {
+    overdue:   ['Overdue',   'bg-danger'],
+    due_soon:  ['Due Soon',  'bg-warning text-dark'],
+    completed: ['Completed', 'bg-secondary'],
+    scheduled: ['Scheduled', 'bg-success'],
+  };
+
+  let currentTaskId = null;
+  let dashboardNeedsRefresh = false;
+  // Created lazily on first open, not here - by the time the 'load' event
+  // fires every <script> tag in the page (including Bootstrap's, further
+  // down in base.html) has already run, so bootstrap.Modal is guaranteed
+  // to exist. Using getOrCreateInstance is also safer than `new` if this
+  // ever runs twice.
+  function getModal() {
+    return bootstrap.Modal.getOrCreateInstance(modalEl);
+  }
+
+  function openTaskModal(taskId) {
+    currentTaskId = taskId;
+    setSaveStatus('Loading…');
+    fetch(`/tasks/${taskId}/data`)
+      .then(r => r.json())
+      .then(populateModal)
+      .catch(() => setSaveStatus('Could not load task.', true));
+    getModal().show();
+  }
+
+  function populateModal(t) {
+    document.getElementById('taskModalTarget').textContent =
+      (t.is_group_task ? '📁 ' : '') + t.target_name + (t.target_subtitle ? ' · ' + t.target_subtitle : '');
+    document.getElementById('taskModalAppliesTo').textContent =
+      (t.is_group_task ? '📁 ' : '') + t.target_name;
+    document.getElementById('taskModalLogLink').href = `/tasks/${t.id}/log`;
+    document.getElementById('taskModalEditLink').href = `/tasks/${t.id}/edit`;
+
+    setField('title', t.title, 'text');
+    setField('next_due_date', t.next_due_date, 'date');
+    setField('frequency_type', t.frequency_type, 'select');
+    setField('frequency_interval', t.frequency_interval, 'number');
+    setField('reminder_days_before', t.reminder_days_before, 'number');
+    setField('notify_email', t.notify_email, 'email');
+    setField('description', t.description, 'textarea');
+
+    const badge = STATUS_BADGES[t.status] || ['—', 'bg-light text-dark'];
+    document.getElementById('taskModalStatus').innerHTML = `<span class="badge ${badge[1]}">${badge[0]}</span>`;
+
+    document.getElementById('taskModalSent').textContent = t.email_sent_for_current_due
+      ? `Sent${t.last_sent_at ? ' · ' + t.last_sent_at : ''}`
+      : 'Not sent';
+
+    setSaveStatus('');
+  }
+
+  function setField(field, value, type) {
+    const row = document.querySelector(`.field-row[data-field="${field}"]`);
+    row.dataset.type = type;
+    row.dataset.raw = (value === null || value === undefined) ? '' : String(value);
+    renderFieldDisplay(row);
+  }
+
+  function renderFieldDisplay(row) {
+    const valueEl = row.querySelector('.field-value');
+    const field = row.dataset.field;
+    const raw = row.dataset.raw;
+    let text;
+    if (field === 'frequency_type') {
+      text = raw === 'once' ? 'One-time (no repeat)' : raw.charAt(0).toUpperCase() + raw.slice(1);
+    } else if (field === 'reminder_days_before') {
+      text = raw + (raw === '1' ? ' day before due' : ' days before due');
+    } else if (field === 'notify_email') {
+      text = raw || '(using default recipient)';
+    } else if (field === 'description') {
+      text = raw || '(no description)';
+    } else {
+      text = raw === '' ? '—' : raw;
+    }
+    valueEl.textContent = text;
+    valueEl.classList.toggle('text-muted', !raw && (field === 'notify_email' || field === 'description'));
+  }
+
+  window.editField = function (valueEl) {
+    const row = valueEl.closest('.field-row');
+    const type = row.dataset.type;
+    const raw = row.dataset.raw;
+
+    let input;
+    if (type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'form-control form-control-sm';
+      input.rows = 3;
+      input.value = raw;
+    } else if (type === 'select') {
+      input = document.createElement('select');
+      input.className = 'form-select form-select-sm';
+      FREQUENCY_TYPES.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f === 'once' ? 'One-time (no repeat)' : f.charAt(0).toUpperCase() + f.slice(1);
+        if (f === raw) opt.selected = true;
+        input.appendChild(opt);
+      });
+    } else {
+      input = document.createElement('input');
+      input.className = 'form-control form-control-sm';
+      input.type = (type === 'date') ? 'date' : (type === 'number') ? 'number' : (type === 'email') ? 'email' : 'text';
+      if (type === 'number') input.min = row.dataset.field === 'frequency_interval' ? 1 : 0;
+      input.value = raw;
+    }
+
+    valueEl.replaceWith(input);
+    input.focus();
+    if (input.select) input.select();
+
+    let settled = false;
+    const commit = () => {
+      if (settled) return;
+      settled = true;
+      saveField(row, input);
+    };
+    input.addEventListener('blur', commit);
+    if (type !== 'textarea') {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { settled = true; restoreDisplay(row, input); }
+      });
+    } else {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { settled = true; restoreDisplay(row, input); }
+      });
+    }
+  };
+
+  function restoreDisplay(row, input) {
+    const valueEl = document.createElement('div');
+    valueEl.className = 'field-value flex-grow-1';
+    valueEl.setAttribute('ondblclick', 'editField(this)');
+    input.replaceWith(valueEl);
+    renderFieldDisplay(row);
+  }
+
+  function saveField(row, input) {
+    const field = row.dataset.field;
+    const value = input.value;
+
+    if (value === row.dataset.raw) { restoreDisplay(row, input); return; }
+
+    setSaveStatus('Saving…');
+    fetch(`/tasks/${currentTaskId}/update-field`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, value }),
+    })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        restoreDisplay(row, input);
+        if (!ok) { setSaveStatus(data.error || 'Could not save.', true); return; }
+        dashboardNeedsRefresh = true;
+        populateModal(data);
+        setSaveStatus('Saved');
+        setTimeout(() => setSaveStatus(''), 1500);
+      })
+      .catch(() => { restoreDisplay(row, input); setSaveStatus('Could not save (network error).', true); });
+  }
+
+  function setSaveStatus(msg, isError) {
+    const el = document.getElementById('taskModalSaveStatus');
+    el.textContent = msg || '';
+    el.className = 'small me-auto ' + (isError ? 'text-danger' : 'text-muted');
+  }
+
+  document.querySelectorAll('.task-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.actions-col')) return; // let Edit/Log/Delete/Done/Send work as normal
+      if (e.target.closest('a')) e.preventDefault();  // title link opens the modal instead of navigating
+      openTaskModal(row.dataset.taskId);
+    });
+  });
+
+  // Bootstrap already closes the modal on the X button and on backdrop
+  // click by default - we just need to refresh the dashboard row data
+  // once the modal is actually closed, if anything changed while it was open.
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    if (dashboardNeedsRefresh) window.location.reload();
+  });
+});
+</script>
 
 {% endblock %}

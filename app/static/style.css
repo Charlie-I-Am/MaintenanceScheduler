@@ -22,3 +22,7 @@ body {
 .card {
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
+
+.actions-col .btn-sm {
+  min-width: 5rem;
+}

@@ -17,6 +17,7 @@
       <td>{{ log.timestamp.strftime('%b %d, %Y %H:%M') }}</td>
       <td>
         {% if log.event == 'created' %}<span class="badge bg-primary">Created</span>
+        {% elif log.event == 'edited' %}<span class="badge bg-warning text-dark">Edited</span>
         {% elif log.event == 'reminder_sent' %}<span class="badge bg-info text-dark">Reminder sent</span>
         {% elif log.event == 'reminder_failed' %}<span class="badge bg-danger">Send failed</span>
         {% elif log.event == 'completed' %}<span class="badge bg-success">Completed</span>

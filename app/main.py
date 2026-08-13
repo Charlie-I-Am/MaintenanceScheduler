@@ -2,8 +2,7 @@ import logging
 import os
 from datetime import date
 
-from flask import Flask, Response, flash, redirect, render_template, request, url_for
-from sqlalchemy import inspect, text
+from flask import Flask, Response, flash, jsonify, redirect, render_template, request, url_for
 
 from ._version import __version__
 from .email_utils import EmailError, build_reminder_email, send_email
@@ -21,65 +20,19 @@ from .models import (
 from .scheduler import compute_next_due, init_scheduler, reschedule
 from .tz import local_today, utc_now
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
 log = logging.getLogger("maintenance_scheduler")
 
-
-def migrate_schema(engine):
-    """One-time, idempotent migration for databases created before Equipment
-    Groups existed. Safe to run on every startup - it no-ops once the
-    database is already up to date. Runs AFTER db.create_all() so brand-new
-    tables (equipment_group) already exist by the time this runs."""
-    inspector = inspect(engine)
-    tables = inspector.get_table_names()
-    if "equipment" not in tables or "maintenance_task" not in tables:
-        return  # fresh database, nothing to migrate
-
-    with engine.begin() as conn:
-        eq_cols = {c["name"] for c in inspector.get_columns("equipment")}
-        if "group_id" not in eq_cols:
-            log.info("Migrating: adding equipment.group_id")
-            conn.execute(text("ALTER TABLE equipment ADD COLUMN group_id INTEGER REFERENCES equipment_group(id)"))
-
-        task_cols = {c["name"] for c in inspector.get_columns("maintenance_task")}
-        if "group_id" not in task_cols:
-            log.info("Migrating: rebuilding maintenance_task to support group_id and optional equipment_id")
-            # SQLite can't ALTER a column's NOT NULL constraint directly, and
-            # equipment_id must become nullable (group-targeted tasks have no
-            # single equipment_id). Rebuild the table with the new schema and
-            # copy existing rows across - every existing task keeps its
-            # equipment_id and simply has group_id = NULL.
-            conn.execute(text("""
-                CREATE TABLE maintenance_task_new (
-                    id INTEGER PRIMARY KEY,
-                    equipment_id INTEGER REFERENCES equipment(id),
-                    group_id INTEGER REFERENCES equipment_group(id),
-                    title VARCHAR(150) NOT NULL,
-                    description TEXT,
-                    frequency_type VARCHAR(20) NOT NULL,
-                    frequency_interval INTEGER,
-                    next_due_date DATE NOT NULL,
-                    reminder_days_before INTEGER NOT NULL,
-                    notify_email VARCHAR(255),
-                    active BOOLEAN NOT NULL,
-                    last_sent_at DATETIME,
-                    last_sent_for_due_date DATE,
-                    created_at DATETIME
-                )
-            """))
-            conn.execute(text("""
-                INSERT INTO maintenance_task_new
-                    (id, equipment_id, group_id, title, description, frequency_type,
-                     frequency_interval, next_due_date, reminder_days_before, notify_email,
-                     active, last_sent_at, last_sent_for_due_date, created_at)
-                SELECT
-                    id, equipment_id, NULL, title, description, frequency_type,
-                    frequency_interval, next_due_date, reminder_days_before, notify_email,
-                    active, last_sent_at, last_sent_for_due_date, created_at
-                FROM maintenance_task
-            """))
-            conn.execute(text("DROP TABLE maintenance_task"))
-            conn.execute(text("ALTER TABLE maintenance_task_new RENAME TO maintenance_task"))
-            log.info("Migration complete: existing tasks kept their equipment, none were reassigned")
+# Fields the dashboard modal is allowed to edit via double-click, and how to
+# parse/validate each one. Anything not listed here (target, active, id,
+# etc.) is only editable from the full task_edit page.
+TASK_EDITABLE_FIELDS = {
+    "title", "description", "next_due_date", "reminder_days_before",
+    "frequency_type", "frequency_interval", "notify_email",
+}
 
 
 def create_app():
@@ -95,7 +48,6 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        migrate_schema(db.engine)
         EmailSettings.get()  # ensure a settings row exists
 
     register_auth(app)
@@ -310,6 +262,7 @@ def register_routes(app):
 
         return render_template("task_form.html", task=None, equipment_items=equipment_items, groups=groups)
 
+
     @app.route("/tasks/<int:task_id>/edit", methods=["GET", "POST"])
     def task_edit(task_id):
         task = MaintenanceTask.query.get_or_404(task_id)
@@ -322,6 +275,13 @@ def register_routes(app):
                 flash("Choose what this task applies to.", "danger")
                 return render_template("task_form.html", task=task, equipment_items=equipment_items, groups=groups)
 
+            tracked_fields = (
+                "equipment_id", "group_id", "title", "description", "frequency_type",
+                "frequency_interval", "next_due_date", "reminder_days_before",
+                "notify_email", "active",
+            )
+            before = {f: getattr(task, f) for f in tracked_fields}
+
             task.equipment_id = equipment_id
             task.group_id = group_id
             task.title = request.form["title"].strip()
@@ -332,6 +292,12 @@ def register_routes(app):
             task.reminder_days_before = int(request.form.get("reminder_days_before") or 3)
             task.notify_email = request.form.get("notify_email", "").strip() or None
             task.active = "active" in request.form
+
+            changed = [f for f in tracked_fields if before[f] != getattr(task, f)]
+            if changed:
+                db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date, event="edited",
+                                        note=f"Changed: {', '.join(changed)}"))
+
             db.session.commit()
             flash(f"Updated task '{task.title}'.", "success")
             return redirect(url_for("dashboard"))
@@ -389,6 +355,79 @@ def register_routes(app):
     def task_log(task_id):
         task = MaintenanceTask.query.get_or_404(task_id)
         return render_template("task_log.html", task=task)
+
+    # ---------------- Task detail / edit modal (JSON) ----------------
+    def _task_json(task):
+        """Serializes a task for the dashboard modal."""
+        return {
+            "id": task.id,
+            "title": task.title,
+            "description": task.description or "",
+            "target_name": task.target_name,
+            "target_subtitle": task.target_subtitle,
+            "is_group_task": task.is_group_task,
+            "next_due_date": task.next_due_date.isoformat(),
+            "reminder_days_before": task.reminder_days_before,
+            "frequency_type": task.frequency_type,
+            "frequency_interval": task.frequency_interval or 1,
+            "frequency_label": task.frequency_label,
+            "notify_email": task.notify_email or "",
+            "active": task.active,
+            "status": task.status,
+            "days_until_due": task.days_until_due,
+            "email_sent_for_current_due": task.email_sent_for_current_due,
+            "last_sent_at": task.last_sent_at.strftime("%b %d, %Y") if task.last_sent_at else None,
+        }
+
+    @app.route("/tasks/<int:task_id>/data")
+    def task_data(task_id):
+        task = MaintenanceTask.query.get_or_404(task_id)
+        return jsonify(_task_json(task))
+
+    @app.route("/tasks/<int:task_id>/update-field", methods=["POST"])
+    def task_update_field(task_id):
+        """Saves a single field, for the dashboard modal's double-click-to-edit.
+        Full target (equipment/group) reassignment and the active toggle stay
+        on the dedicated edit page - this only covers TASK_EDITABLE_FIELDS."""
+        task = MaintenanceTask.query.get_or_404(task_id)
+        payload = request.get_json(silent=True) or {}
+        field = payload.get("field")
+        value = payload.get("value", "")
+
+        if field not in TASK_EDITABLE_FIELDS:
+            return jsonify({"ok": False, "error": "That field can't be edited here."}), 400
+
+        old_value = getattr(task, field)
+
+        try:
+            if field == "title":
+                value = value.strip()
+                if not value:
+                    return jsonify({"ok": False, "error": "Title can't be empty."}), 400
+                task.title = value
+            elif field == "description":
+                task.description = value.strip()
+            elif field == "next_due_date":
+                task.next_due_date = date.fromisoformat(value)
+            elif field == "reminder_days_before":
+                task.reminder_days_before = max(0, int(value))
+            elif field == "frequency_type":
+                if value not in FREQUENCY_TYPES:
+                    return jsonify({"ok": False, "error": "Invalid repeat setting."}), 400
+                task.frequency_type = value
+            elif field == "frequency_interval":
+                task.frequency_interval = max(1, int(value))
+            elif field == "notify_email":
+                task.notify_email = value.strip() or None
+        except (ValueError, TypeError):
+            return jsonify({"ok": False, "error": "That value doesn't look right."}), 400
+
+        if getattr(task, field) != old_value:
+            db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date, event="edited",
+                                    note=f"Changed {field}"))
+
+        db.session.commit()
+        return jsonify(_task_json(task))
 
     # ---------------- Settings ----------------
     @app.route("/settings", methods=["GET", "POST"])

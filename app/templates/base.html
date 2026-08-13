@@ -21,6 +21,21 @@
           <li class="nav-item"><a class="nav-link" href="{{ url_for('group_list') }}">Groups</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('settings_page') }}">Email Settings</a></li>
         </ul>
+      <!-- GitHub button -->
+      <a
+        class="nav-link ms-3"
+        href="https://github.com/Charlie-I-Am/MaintenanceScheduler"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="View on GitHub"
+      >
+        <img
+          src="{{ url_for('static', filename='github-white.png') }}"
+          alt="GitHub"
+          width="28"
+          height="28"
+        >
+      </a>
       </div>
     </div>
   </nav>

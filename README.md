@@ -117,6 +117,15 @@ your equipment, groups, tasks, and email settings all carry over.
 
 ## Changelog
 
+### 0.3.8
+ - Removed old database migration tool
+ - Added github repo link to top navbar
+ - Fixed version info log, by allowing info to be logged
+ - Log edits made to task
+ - Made a popup task editor on dashboard when task was clicked, double clicking a
+   field will allow edits to it.
+ - Made task action buttons the same size on smaller screens.
+
 ### 0.3.7
  - Bug fixes to release a stable version
 
