@@ -2,14 +2,14 @@ import logging
 import os
 from datetime import date
 
-from flask import ( 
-    Flask, 
-    Response, 
-    flash, 
-    jsonify, 
-    redirect, 
-    render_template, 
-    request, 
+from flask import (
+    Flask,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
     url_for,
 )
 
