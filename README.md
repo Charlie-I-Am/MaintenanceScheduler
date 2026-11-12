@@ -117,9 +117,10 @@ your equipment, groups, tasks, and email settings all carry over.
 
 ## Changelog
 
-### 0.3.10
+### 0.3.11
  - Fixed/improved ruff check workflow
  - Cleaned code with automated checks
+ - Updated `README.md`.
 
 ### 0.3.9
  - Added delete, log, and edit icons to clean up UI.
