@@ -39,8 +39,13 @@ log = logging.getLogger("maintenance_scheduler")
 # parse/validate each one. Anything not listed here (target, active, id,
 # etc.) is only editable from the full task_edit page.
 TASK_EDITABLE_FIELDS = {
-    "title", "description", "next_due_date", "reminder_days_before",
-    "frequency_type", "frequency_interval", "notify_email",
+    "title",
+    "description",
+    "next_due_date",
+    "reminder_days_before",
+    "frequency_type",
+    "frequency_interval",
+    "notify_email",
 }
 
 
@@ -80,7 +85,8 @@ def register_auth(app):
         auth = request.authorization
         if not auth or auth.username != user or auth.password != pw:
             return Response(
-                "Authentication required.", 401,
+                "Authentication required.",
+                401,
                 {"WWW-Authenticate": 'Basic realm="Maintenance Scheduler"'},
             )
 
@@ -89,7 +95,11 @@ def register_routes(app):
 
     @app.context_processor
     def inject_globals():
-        return {"CATEGORIES": CATEGORIES, "FREQUENCY_TYPES": FREQUENCY_TYPES, "today": local_today()}
+        return {
+            "CATEGORIES": CATEGORIES,
+            "FREQUENCY_TYPES": FREQUENCY_TYPES,
+            "today": local_today(),
+        }
 
     @app.template_filter("fmt_count")
     def fmt_count_filter(n, singular):
@@ -101,7 +111,9 @@ def register_routes(app):
         status_filter = request.args.get("status", "")
         category_filter = request.args.get("category", "")
 
-        tasks = MaintenanceTask.query.order_by(MaintenanceTask.next_due_date.asc()).all()
+        tasks = MaintenanceTask.query.order_by(
+            MaintenanceTask.next_due_date.asc()
+        ).all()
 
         if category_filter:
             tasks = [t for t in tasks if t.target_category == category_filter]
@@ -118,15 +130,20 @@ def register_routes(app):
             counts[t.status] = counts.get(t.status, 0) + 1
 
         return render_template(
-            "index.html", tasks=tasks, counts=counts,
-            status_filter=status_filter, category_filter=category_filter,
+            "index.html",
+            tasks=tasks,
+            counts=counts,
+            status_filter=status_filter,
+            category_filter=category_filter,
         )
 
     # ---------------- Equipment ----------------
     @app.route("/equipment")
     def equipment_list():
         groups = EquipmentGroup.query.order_by(EquipmentGroup.name).all()
-        ungrouped = Equipment.query.filter_by(group_id=None).order_by(Equipment.name).all()
+        ungrouped = (
+            Equipment.query.filter_by(group_id=None).order_by(Equipment.name).all()
+        )
         return render_template("equipment.html", groups=groups, ungrouped=ungrouped)
 
     @app.route("/equipment/new", methods=["GET", "POST"])
@@ -214,7 +231,9 @@ def register_routes(app):
             eq.group_id = None
         db.session.delete(group)
         db.session.commit()
-        flash(f"Deleted group '{name}'. Its equipment was kept but ungrouped.", "success")
+        flash(
+            f"Deleted group '{name}'. Its equipment was kept but ungrouped.", "success"
+        )
         return redirect(url_for("group_list"))
 
     # ---------------- Tasks ----------------
@@ -241,7 +260,12 @@ def register_routes(app):
             equipment_id, group_id = _parse_target(request.form)
             if not equipment_id and not group_id:
                 flash("Choose what this task applies to.", "danger")
-                return render_template("task_form.html", task=None, equipment_items=equipment_items, groups=groups)
+                return render_template(
+                    "task_form.html",
+                    task=None,
+                    equipment_items=equipment_items,
+                    groups=groups,
+                )
 
             task = MaintenanceTask(
                 equipment_id=equipment_id,
@@ -258,19 +282,31 @@ def register_routes(app):
             # than task.target_name, since the new task's relationships
             # aren't resolvable until after a flush/commit.
             if group_id:
-                target_label = next((g.name for g in groups if g.id == group_id), "group")
+                target_label = next(
+                    (g.name for g in groups if g.id == group_id), "group"
+                )
             else:
-                target_label = next((e.name for e in equipment_items if e.id == equipment_id), "equipment")
+                target_label = next(
+                    (e.name for e in equipment_items if e.id == equipment_id),
+                    "equipment",
+                )
 
             db.session.add(task)
-            db.session.add(TaskLog(task=task, due_date=task.next_due_date, event="created",
-                                    note=f"Task created for {target_label}"))
+            db.session.add(
+                TaskLog(
+                    task=task,
+                    due_date=task.next_due_date,
+                    event="created",
+                    note=f"Task created for {target_label}",
+                )
+            )
             db.session.commit()
             flash(f"Created task '{task.title}'.", "success")
             return redirect(url_for("dashboard"))
 
-        return render_template("task_form.html", task=None, equipment_items=equipment_items, groups=groups)
-
+        return render_template(
+            "task_form.html", task=None, equipment_items=equipment_items, groups=groups
+        )
 
     @app.route("/tasks/<int:task_id>/edit", methods=["GET", "POST"])
     def task_edit(task_id):
@@ -282,12 +318,24 @@ def register_routes(app):
             equipment_id, group_id = _parse_target(request.form)
             if not equipment_id and not group_id:
                 flash("Choose what this task applies to.", "danger")
-                return render_template("task_form.html", task=task, equipment_items=equipment_items, groups=groups)
+                return render_template(
+                    "task_form.html",
+                    task=task,
+                    equipment_items=equipment_items,
+                    groups=groups,
+                )
 
             tracked_fields = (
-                "equipment_id", "group_id", "title", "description", "frequency_type",
-                "frequency_interval", "next_due_date", "reminder_days_before",
-                "notify_email", "active",
+                "equipment_id",
+                "group_id",
+                "title",
+                "description",
+                "frequency_type",
+                "frequency_interval",
+                "next_due_date",
+                "reminder_days_before",
+                "notify_email",
+                "active",
             )
             before = {f: getattr(task, f) for f in tracked_fields}
 
@@ -298,20 +346,30 @@ def register_routes(app):
             task.frequency_type = request.form.get("frequency_type", "once")
             task.frequency_interval = int(request.form.get("frequency_interval") or 1)
             task.next_due_date = date.fromisoformat(request.form["next_due_date"])
-            task.reminder_days_before = int(request.form.get("reminder_days_before") or 3)
+            task.reminder_days_before = int(
+                request.form.get("reminder_days_before") or 3
+            )
             task.notify_email = request.form.get("notify_email", "").strip() or None
             task.active = "active" in request.form
 
             changed = [f for f in tracked_fields if before[f] != getattr(task, f)]
             if changed:
-                db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date, event="edited",
-                                        note=f"Changed: {', '.join(changed)}"))
+                db.session.add(
+                    TaskLog(
+                        task_id=task.id,
+                        due_date=task.next_due_date,
+                        event="edited",
+                        note=f"Changed: {', '.join(changed)}",
+                    )
+                )
 
             db.session.commit()
             flash(f"Updated task '{task.title}'.", "success")
             return redirect(url_for("dashboard"))
 
-        return render_template("task_form.html", task=task, equipment_items=equipment_items, groups=groups)
+        return render_template(
+            "task_form.html", task=task, equipment_items=equipment_items, groups=groups
+        )
 
     @app.route("/tasks/<int:task_id>/delete", methods=["POST"])
     def task_delete(task_id):
@@ -330,7 +388,9 @@ def register_routes(app):
         db.session.add(TaskLog(task_id=task.id, due_date=old_due, event="completed"))
 
         if task.is_recurring:
-            task.next_due_date = compute_next_due(old_due, task.frequency_type, task.frequency_interval)
+            task.next_due_date = compute_next_due(
+                old_due, task.frequency_type, task.frequency_interval
+            )
             task.last_sent_for_due_date = None
         else:
             task.active = False
@@ -349,13 +409,25 @@ def register_routes(app):
             send_email(settings, to_addr, subject, text, html)
             task.last_sent_at = utc_now()
             task.last_sent_for_due_date = task.next_due_date
-            db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date,
-                                    event="reminder_sent", note=f"Manually sent to {to_addr}"))
+            db.session.add(
+                TaskLog(
+                    task_id=task.id,
+                    due_date=task.next_due_date,
+                    event="reminder_sent",
+                    note=f"Manually sent to {to_addr}",
+                )
+            )
             db.session.commit()
             flash(f"Reminder email sent to {to_addr}.", "success")
         except EmailError as exc:
-            db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date,
-                                    event="reminder_failed", note=str(exc)))
+            db.session.add(
+                TaskLog(
+                    task_id=task.id,
+                    due_date=task.next_due_date,
+                    event="reminder_failed",
+                    note=str(exc),
+                )
+            )
             db.session.commit()
             flash(str(exc), "danger")
         return redirect(url_for("dashboard"))
@@ -385,7 +457,9 @@ def register_routes(app):
             "status": task.status,
             "days_until_due": task.days_until_due,
             "email_sent_for_current_due": task.email_sent_for_current_due,
-            "last_sent_at": task.last_sent_at.strftime("%b %d, %Y") if task.last_sent_at else None,
+            "last_sent_at": task.last_sent_at.strftime("%b %d, %Y")
+            if task.last_sent_at
+            else None,
         }
 
     @app.route("/tasks/<int:task_id>/data")
@@ -404,7 +478,9 @@ def register_routes(app):
         value = payload.get("value", "")
 
         if field not in TASK_EDITABLE_FIELDS:
-            return jsonify({"ok": False, "error": "That field can't be edited here."}), 400
+            return jsonify(
+                {"ok": False, "error": "That field can't be edited here."}
+            ), 400
 
         old_value = getattr(task, field)
 
@@ -422,18 +498,28 @@ def register_routes(app):
                 task.reminder_days_before = max(0, int(value))
             elif field == "frequency_type":
                 if value not in FREQUENCY_TYPES:
-                    return jsonify({"ok": False, "error": "Invalid repeat setting."}), 400
+                    return jsonify(
+                        {"ok": False, "error": "Invalid repeat setting."}
+                    ), 400
                 task.frequency_type = value
             elif field == "frequency_interval":
                 task.frequency_interval = max(1, int(value))
             elif field == "notify_email":
                 task.notify_email = value.strip() or None
         except (ValueError, TypeError):
-            return jsonify({"ok": False, "error": "That value doesn't look right."}), 400
+            return jsonify(
+                {"ok": False, "error": "That value doesn't look right."}
+            ), 400
 
         if getattr(task, field) != old_value:
-            db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date, event="edited",
-                                    note=f"Changed {field}"))
+            db.session.add(
+                TaskLog(
+                    task_id=task.id,
+                    due_date=task.next_due_date,
+                    event="edited",
+                    note=f"Changed {field}",
+                )
+            )
 
         db.session.commit()
         return jsonify(_task_json(task))
@@ -453,7 +539,9 @@ def register_routes(app):
             settings.use_ssl = "use_ssl" in request.form
             settings.from_email = request.form.get("from_email", "").strip()
             settings.default_to_email = request.form.get("default_to_email", "").strip()
-            settings.check_interval_minutes = int(request.form.get("check_interval_minutes") or 60)
+            settings.check_interval_minutes = int(
+                request.form.get("check_interval_minutes") or 60
+            )
             db.session.commit()
             reschedule(app)
             flash("Email settings saved.", "success")
@@ -466,7 +554,8 @@ def register_routes(app):
         to_addr = request.form.get("test_to") or settings.default_to_email
         try:
             send_email(
-                settings, to_addr,
+                settings,
+                to_addr,
                 "Maintenance Scheduler - Test Email",
                 "This is a test email from your Maintenance Scheduler app. "
                 "If you received this, your SMTP settings are working.",

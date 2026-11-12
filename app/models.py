@@ -37,9 +37,7 @@ class EquipmentGroup(db.Model):
 
     # Equipment items belonging to this group. Deleting a group does NOT
     # delete the equipment in it - it just un-groups them (see route logic).
-    equipment = db.relationship(
-        "Equipment", backref="group", order_by="Equipment.name"
-    )
+    equipment = db.relationship("Equipment", backref="group", order_by="Equipment.name")
 
     # Tasks assigned directly to the group (applies to every item in it).
     # These ARE deleted if the group is deleted.
@@ -175,9 +173,13 @@ class TaskLog(db.Model):
     __tablename__ = "task_log"
 
     id = db.Column(db.Integer, primary_key=True)
-    task_id = db.Column(db.Integer, db.ForeignKey("maintenance_task.id"), nullable=False)
+    task_id = db.Column(
+        db.Integer, db.ForeignKey("maintenance_task.id"), nullable=False
+    )
     due_date = db.Column(db.Date, nullable=False)
-    event = db.Column(db.String(30))  # created, reminder_sent, reminder_failed, completed, test_email
+    event = db.Column(
+        db.String(30)
+    )  # created, reminder_sent, reminder_failed, completed, test_email
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     note = db.Column(db.Text)
 
@@ -199,7 +201,9 @@ class EmailSettings(db.Model):
 
     check_interval_minutes = db.Column(db.Integer, default=60, nullable=False)
 
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     @staticmethod
     def get():

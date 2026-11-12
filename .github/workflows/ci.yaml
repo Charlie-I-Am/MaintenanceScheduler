@@ -20,8 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff
+          pip install -r requirements-dev.txt
 
       # If you don't have a ruff config yet, this will just check
       # basic style/errors with sane defaults - safe to leave in.

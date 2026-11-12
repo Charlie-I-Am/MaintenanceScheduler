@@ -47,7 +47,9 @@ def check_and_send_reminders(app):
             days_until = (task.next_due_date - today).days
             already_sent = task.last_sent_for_due_date == task.next_due_date
 
-            should_send = days_until <= (task.reminder_days_before or 0) and not already_sent
+            should_send = (
+                days_until <= (task.reminder_days_before or 0) and not already_sent
+            )
 
             if not should_send:
                 continue
@@ -59,13 +61,27 @@ def check_and_send_reminders(app):
                 send_email(settings, to_addr, subject, text, html)
                 task.last_sent_at = db.func.now()
                 task.last_sent_for_due_date = task.next_due_date
-                db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date,
-                                        event="reminder_sent", note=f"Sent to {to_addr}"))
+                db.session.add(
+                    TaskLog(
+                        task_id=task.id,
+                        due_date=task.next_due_date,
+                        event="reminder_sent",
+                        note=f"Sent to {to_addr}",
+                    )
+                )
                 db.session.commit()
-                log.info("Sent reminder for task %s (%s) to %s", task.id, task.title, to_addr)
+                log.info(
+                    "Sent reminder for task %s (%s) to %s", task.id, task.title, to_addr
+                )
             except EmailError as exc:
-                db.session.add(TaskLog(task_id=task.id, due_date=task.next_due_date,
-                                        event="reminder_failed", note=str(exc)))
+                db.session.add(
+                    TaskLog(
+                        task_id=task.id,
+                        due_date=task.next_due_date,
+                        event="reminder_failed",
+                        note=str(exc),
+                    )
+                )
                 db.session.commit()
                 log.warning("Failed to send reminder for task %s: %s", task.id, exc)
 
