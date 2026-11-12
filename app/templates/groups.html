@@ -31,7 +31,10 @@ and assign one maintenance task to the whole group instead of duplicating it per
         <a href="{{ url_for('group_edit', group_id=group.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
         <form method="post" action="{{ url_for('group_delete', group_id=group.id) }}"
               onsubmit="return confirm('Delete group {{ group.name }}? Its equipment will be kept but ungrouped, and its group-level tasks will be removed.');">
-          <button class="btn btn-sm btn-outline-danger">Delete</button>
+          <!--<button class="btn btn-sm btn-outline-danger">Delete</button>-->
+          <button type="submit" class="icon-btn icon-btn-danger" title="Delete equipment group" aria-label="Delete group">
+            <span class="icon" style="--icon-url: url('{{ url_for('static', filename='icons/delete.svg') }}')"></span>
+          </button>
         </form>
       </div>
     </div>

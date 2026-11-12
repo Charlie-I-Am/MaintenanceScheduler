@@ -30,7 +30,9 @@
         <a href="{{ url_for('equipment_edit', eq_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
         <form method="post" action="{{ url_for('equipment_delete', eq_id=item.id) }}"
               onsubmit="return confirm('Delete {{ item.name }} and all its tasks?');">
-          <button class="btn btn-sm btn-outline-danger">Delete</button>
+          <button type="submit" class="icon-btn icon-btn-danger" title="Delete equipment" aria-label="Delete equipment">
+            <span class="icon" style="--icon-url: url('{{ url_for('static', filename='icons/delete.svg') }}')"></span>
+          </button>
         </form>
       </div>
     </div>

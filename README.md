@@ -117,6 +117,11 @@ your equipment, groups, tasks, and email settings all carry over.
 
 ## Changelog
 
+### 0.3.9
+ - Added delete, log, and edit icons to clean up UI.
+ - Updated dependencies in `requirmets.txt`.
+ - Updated `README.md` screenshots.
+
 ### 0.3.8
  - Removed old database migration tool
  - Added github repo link to top navbar

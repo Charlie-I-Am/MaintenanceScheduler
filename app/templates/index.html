@@ -147,12 +147,20 @@ document.getElementById('statusFilter').addEventListener('change', applyDashboar
             <button type="submit" class="btn btn-sm btn-outline-primary" title="Send reminder email now">✉ Send</button>
           </form>
           {% endif %}
-          <a href="{{ url_for('task_edit', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-          <a href="{{ url_for('task_log', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">Log</a>
+          <a href="{{ url_for('task_edit', task_id=task.id) }}" class="icon-btn" title="Edit task" aria-label="Edit task">
+            <span class="icon" style="--icon-url: url('{{ url_for('static', filename='icons/settings.svg') }}')"></span>
+          </a>
+
+          <a href="{{ url_for('task_log', task_id=task.id) }}" class="icon-btn" title="View log" aria-label="View log">
+            <span class="icon" style="--icon-url: url('{{ url_for('static', filename='icons/log.svg') }}')"></span>
+          </a>
+
           <form method="post" action="{{ url_for('task_delete', task_id=task.id) }}" class="d-inline"
-                onsubmit="return confirm('Permanently delete &quot;{{ task.title }}&quot;? This cannot be undone.');">
-            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete task permanently">Delete</button>
-          </form>
+              onsubmit="return confirm('Permanently delete &quot;{{ task.title }}&quot;? This cannot be undone.');">
+            <button type="submit" class="icon-btn icon-btn-danger" title="Delete task permanently" aria-label="Delete task">
+              <span class="icon" style="--icon-url: url('{{ url_for('static', filename='icons/delete.svg') }}')"></span>
+            </button>
+          </form> 
         </div>
       </td>
     </tr>
