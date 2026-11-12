@@ -191,6 +191,7 @@ maintenance-scheduler/
 ├── docker-compose.yaml     # defines the service + the persistent ./data volume
 ├── Dockerfile
 ├── requirements.txt
+├── requirements-dev.txt
 ├── data/                  # <- persists across rebuilds (SQLite DB lives here)
 └── app/
     ├── main.py             # Flask routes / app factory
@@ -200,7 +201,9 @@ maintenance-scheduler/
     ├── _version.py         # to track what version of the app you are running
     ├── tz.py               # manages timezone set in the compose for the rest of the app
     ├── templates/          # Jinja2 + Bootstrap 5 UI
-    └── static/style.css
+    └── static/
+        ├── icons/
+        └── style.css
 ```
 
 ## Notes / things to customize

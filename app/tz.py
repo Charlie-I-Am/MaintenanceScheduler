@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 try:
@@ -15,4 +15,4 @@ def local_today():
 
 def utc_now():
     """Current time, UTC and timezone-aware - use for stored timestamps."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
