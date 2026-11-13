@@ -8,7 +8,7 @@ tools, and other equipment — with automatic email reminders.
 This project is community driven, and outside collaborators are welcome! You just have to agree to the contribution agreement. If there is a feature that you would like to see and it is not currently on the road map let us know! If you find bugs or issues with the program also let us know.
 
 ### Contribution Agreement
-By creating a pull request and possibly contributing to this project you acknowledge and agree with this projects lisence, and its terms. You affirm that the code you submit is for building up the project, and is free from malicious code and to the best of your knowledge known vulnerbilites. The code you submit must be commented and readable, and if it is not you accept that the pull request may be denied and returned with comments, you may chose to change it and resubmit. Please do not continue to submit pull requests if you have not changed anything.
+By creating a pull request and contributing to this project you acknowledge and agree with the project's lisence and its terms. You affirm that the code you submit is for building up the project, and is free from malicious code and to the best of your knowledge known vulnerbilites. The code you submit must be commented and readable, and if it is not you accept that the pull request may be denied and returned with comments, you may chose to change it and resubmit. Please do not continue to submit pull requests if you have not changed anything.
 
 ## Features
 
@@ -16,15 +16,12 @@ By creating a pull request and possibly contributing to this project you acknowl
 - Organize equipment into **equipment groups** (e.g. "Rack 1 Servers", "Shop
   Power Tools") and assign **one maintenance task to an entire group** instead
   of duplicating the same task per item
-- Add **maintenance tasks** targeting either a single piece of equipment or a
+- Add **maintenance tasks** for either a single piece of equipment or a
   whole group, either one-time or repeating (every N days/weeks/months/years)
-- Dashboard shows every task, what it applies to, due date, status (overdue /
-  due soon / scheduled / completed), and **whether the reminder email has
-  already been sent** for the current due date
+- Dashboard shows every task, what it applies to, due date, status, and **whether the reminder   email has already been sent** for the current due date
 - Configurable **email settings** in the web UI: SMTP server, credentials,
   from/to addresses, and how far in advance (per task) to send the reminder
-- "Send now" button to manually trigger a task's reminder email, and a
-  "Send test email" button in Settings to verify SMTP config
+- "Send now" button to manually trigger a task's reminder email.
 - Mark a task complete — one-time tasks retire, repeating tasks automatically
   roll forward to their next due date
 - Per-task history log (task created, reminders sent, failures, completions)
@@ -35,6 +32,11 @@ By creating a pull request and possibly contributing to this project you acknowl
 
 Download the example `docker-compose.yaml` file above into its own directory.
 
+- Set `TZ` in `docker-compose.yaml` to your local timezone so "days until due"
+  lines up with your calendar.
+- `SECRET_KEY` in `docker-compose.yaml` should be changed to a random value.
+
+Run
 ```bash
 docker compose up -d
 ```
@@ -43,6 +45,11 @@ Then open **http://localhost:5000**.
 
 The SQLite database is created automatically inside `./data/maintenance.db`
 on first run.
+
+## Optional: Basic Auth
+
+Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` in the `docker-compose.yaml` to 
+put the whole app behind a simple HTTP login prompt. Leave both blank to disable. 
 
 ## Equipment groups
 
@@ -87,8 +94,7 @@ before relying on it.
 Each task has a **due date** and a **"remind me N days before"** setting. Once
 today's date is within that window, the app sends one reminder email and marks
 it as sent for that occurring due date — it won't send duplicates. If you don't
-mark the task complete, it stays visible as "Overdue" (and the reminder has
-already gone out) until you do.
+mark the task complete, it stays visible as "Overdue" until you do.
 
 Marking a task **complete**:
 - One-time tasks become inactive (shown as "Completed") but stay in the
@@ -136,16 +142,6 @@ your equipment, groups, tasks, and email settings all carry over.
    field will allow edits to it.
  - Made task action buttons the same size on smaller screens.
 
-### 0.3.7
- - Bug fixes to release a stable version
-
-### 0.3.3
- - Fixed lint fixes for first publish, import organization and datetime with 
-   timezone from docker compose support.
-
-### 0.3.1
- - Added in docker-publish, and ci files for github automation.
-
 ### 0.3.0
 - Fixed the category badge on equipment/group cards rendering pinned to the
   top of the card instead of vertically centered next to the name (a flex
@@ -166,11 +162,10 @@ your equipment, groups, tasks, and email settings all carry over.
   rendering the literal text "None" in edit forms.
 
 ### 0.2.0
-- Added **equipment groups**: organize equipment into groups and assign one
-  task to an entire group instead of duplicating it per item.
+- Added **equipment groups**.
 - Automatic singular/plural wording throughout the UI and emails (e.g.
   "1 day" vs "3 days") instead of "day(s)".
-- Added an automatic, idempotent database migration so upgrading from a
+- Added an automatic, database migration so upgrading from a
   pre-groups install doesn't require manual steps.
 
 ### 0.1.0
@@ -179,11 +174,6 @@ your equipment, groups, tasks, and email settings all carry over.
   tracking, per-task history log, email settings page with test-send, and
   Docker Compose setup with all data persisted in a bind-mounted `./data`
   folder so upgrades never lose data.
-
-## Optional: basic auth
-
-Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` in the `docker-compose.yaml` to 
-put the whole app behind a simple HTTP login prompt. Leave both blank to disable. 
 
 ## Project structure
 
@@ -206,15 +196,6 @@ maintenance-scheduler/
         ├── icons/
         └── style.css
 ```
-
-## Notes / things to customize
-
-- Set `TZ` in `docker-compose.yaml` to your local timezone so "days until due"
-  lines up with your calendar.
-- The scheduler runs inside the single web process (gunicorn with 1 worker).
-  If you ever scale to multiple workers/replicas, move the reminder-check job
-  to a separate process to avoid duplicate emails.
-- `SECRET_KEY` in `docker-compose.yaml` should be changed to a random value.
 
 # Screenshots
 ![dashboard](image.png)
