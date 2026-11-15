@@ -123,6 +123,11 @@ your equipment, groups, tasks, and email settings all carry over.
 
 ## Changelog
 
+### 0.3.12
+ - Fixed sending emails on a schedule
+ - Updated UI
+ - Small bug fixes
+
 ### 0.3.11
  - Fixed/improved ruff check workflow
  - Cleaned code with automated checks

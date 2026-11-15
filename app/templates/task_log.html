@@ -3,7 +3,7 @@
 {% block content %}
 
 <h1 class="h3 mb-1">{{ task.title }}</h1>
-<div class="text-muted mb-3">{{ task.equipment.name }} &middot; History</div>
+<div class="text-muted mb-3">{{ task.target_name }} &middot; History</div>
 
 {% if not task.logs %}
   <div class="alert alert-light border">No history yet for this task.</div>

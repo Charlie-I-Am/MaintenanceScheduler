@@ -103,7 +103,8 @@ def init_scheduler(app):
         trigger="interval",
         minutes=interval,
         id="reminder_check",
-        next_run_time=None,  # first run scheduled below after short delay
+        coalesce=True,  # This is already the default
+        misfire_grace_time=300,  # Allow job to run up to this amount late in seconds
         replace_existing=True,
     )
     scheduler.start()

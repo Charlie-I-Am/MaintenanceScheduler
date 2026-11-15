@@ -1,6 +1,6 @@
 # For local development / testing changes before you push a release.
 # Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#   docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
 #
 # This overrides the published `image:` with a local build from the
 # Dockerfile in this repo, so you can test your own code changes.
